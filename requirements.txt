@@ -3,3 +3,4 @@ scikit-learn==0.24.2
 spacy==3.2.0
 gunicorn
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.2.0/en_core_web_sm-3.2.0.tar.gz
+blis==0.7.4
