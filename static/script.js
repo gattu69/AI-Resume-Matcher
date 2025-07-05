@@ -1,8 +1,11 @@
 document.getElementById('analyze-btn').addEventListener('click', async () => {
     const resume = document.getElementById('resume').value;
     const jobDescription = document.getElementById('job_description').value;
+    const resumeFile = document.getElementById('resume-upload').files[0];
+    const jdFile = document.getElementById('jd-upload').files[0];
 
-    if (!resume || !jobDescription) {
+    // Only require text if no file is uploaded
+    if ((!resume && !resumeFile) || (!jobDescription && !jdFile)) {
         document.querySelectorAll('.input-box').forEach(box => {
             box.style.animation = 'rubberBand 0.8s';
             setTimeout(() => box.style.animation = '', 800);
@@ -15,10 +18,11 @@ document.getElementById('analyze-btn').addEventListener('click', async () => {
     btn.disabled = true;
 
     try {
-        // Use FormData for sending as form data (not JSON)
         const formData = new FormData();
         formData.append('resume', resume);
         formData.append('job_description', jobDescription);
+        if (resumeFile) formData.append('resume-upload', resumeFile);
+        if (jdFile) formData.append('jd-upload', jdFile);
 
         const response = await fetch('/analyze', {
             method: 'POST',
@@ -88,7 +92,7 @@ document.getElementById('analyze-btn').addEventListener('click', async () => {
     }
 });
 
-// Handle file uploads (keep your existing code)
+// Handle file uploads
 document.getElementById('resume-upload').addEventListener('change', function(e) {
     handleFileUpload(e, 'resume');
 });
@@ -101,9 +105,14 @@ function handleFileUpload(event, targetTextareaId) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById(targetTextareaId).value = e.target.result;
-    };
-    reader.readAsText(file);
+    // Only read as text if not PDF
+    if (file.type === "application/pdf") {
+        document.getElementById(targetTextareaId).value = "PDF file selected. Text will be extracted on server.";
+    } else {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById(targetTextareaId).value = e.target.result;
+        };
+        reader.readAsText(file);
+    }
 }
