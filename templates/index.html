@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Matcher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='static.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header-container">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Resume Matcher AI</h1>
+                    <p>Smart matching for better career opportunities</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-container">
+            <div class="input-area">
+                <div class="input-box animate__animated animate__fadeInLeft">
+                    <div class="input-header">
+                        <i class="fas fa-file-alt"></i>
+                        <h2>Your Resume</h2>
+                        <div class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">Paste your plain text resume or upload a file</span>
+                        </div>
+                    </div>
+                    <textarea id="resume" placeholder="Paste your resume text here..."></textarea>
+                    <div class="file-upload">
+                        <label for="resume-upload" class="upload-btn">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload File
+                        </label>
+                        <input type="file" id="resume-upload" accept=".pdf,.doc,.docx,.txt">
+                    </div>
+                </div>
+
+                <div class="input-box animate__animated animate__fadeInRight">
+                    <div class="input-header">
+                        <i class="fas fa-briefcase"></i>
+                        <h2>Job Description</h2>
+                        <div class="tooltip">
+                            <i class="fas fa-info-circle"></i>
+                            <span class="tooltiptext">Paste the job description or requirements</span>
+                        </div>
+                    </div>
+                    <textarea id="job_description" placeholder="Paste the job description text here..."></textarea>
+                    <div class="file-upload">
+                        <label for="jd-upload" class="upload-btn">
+                            <i class="fas fa-cloud-upload-alt"></i> Upload File
+                        </label>
+                        <input type="file" id="jd-upload" accept=".pdf,.doc,.docx,.txt">
+                    </div>
+                </div>
+            </div>
+            
+            <button id="analyze-btn" class="analyze-btn">
+                Analyze Match
+            </button>
+        </div>
+        
+        <div id="results" class="hidden">
+            <div class="score-container">
+                <div class="score-circle">
+                    <span id="match-score">0</span>%
+                </div>
+                <h3>Compatibility Score</h3>
+            </div>
+            
+            <div class="results-section">
+                <h3><i class="fas fa-check-circle"></i> Matching Keywords</h3>
+                <div id="matching-keywords" class="keywords-container"></div>
+            </div>
+            
+            <div class="results-section">
+                <h3><i class="fas fa-exclamation-circle"></i> Missing Keywords</h3>
+                <p>These important keywords from the job description are missing from your resume:</p>
+                <div id="missing-keywords" class="keywords-container"></div>
+            </div>
+            
+            <div class="results-section">
+                <h3><i class="fas fa-chart-bar"></i> Resume Analysis</h3>
+                <div id="resume-analysis"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
