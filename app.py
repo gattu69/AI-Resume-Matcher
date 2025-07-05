@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, jsonify
 import spacy.cli
 spacy.cli.download("en_core_web_sm")
 import en_core_web_sm
+from flask import Flask, render_template, request, jsonify
 from nlp_processor import analyze_resume, calculate_match_score
 import os
 
