@@ -1,22 +1,18 @@
 from flask import Flask, render_template, request, jsonify
 from nlp_processor import analyze_resume, calculate_match_score
 import PyPDF2
-import os
 
 app = Flask(__name__)
 
 def extract_text_from_pdf(file_storage):
-    try:
-        file_storage.seek(0)
-        reader = PyPDF2.PdfReader(file_storage)
-        text = ""
-        for page in reader.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text += page_text
-        return text.strip()
-    except Exception as e:
-        return ""
+    file_storage.seek(0)
+    reader = PyPDF2.PdfReader(file_storage)
+    text = ""
+    for page in reader.pages:
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text
+    return text.strip()
 
 @app.route('/')
 def index():
@@ -25,40 +21,40 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        resume_text = request.form.get('resume', '').strip()
-        job_description = request.form.get('job_description', '').strip()
+        resume_text = request.form.get('resume', '')
+        job_description = request.form.get('job_description', '')
 
-        # Handle uploaded resume
-        resume_file = request.files.get('resume-upload')
-        if resume_file and resume_file.filename:
-            if resume_file.filename.lower().endswith('.pdf'):
-                resume_text = extract_text_from_pdf(resume_file)
+        if 'resume-upload' in request.files and request.files['resume-upload'].filename:
+            file = request.files['resume-upload']
+            if file.filename.lower().endswith('.pdf'):
+                resume_text = extract_text_from_pdf(file)
             else:
-                resume_text = resume_file.read().decode('utf-8', errors='ignore')
+                resume_text = file.read().decode('utf-8', errors='ignore')
 
-        # Handle uploaded job description
-        jd_file = request.files.get('jd-upload')
-        if jd_file and jd_file.filename:
-            if jd_file.filename.lower().endswith('.pdf'):
-                job_description = extract_text_from_pdf(jd_file)
+        if 'jd-upload' in request.files and request.files['jd-upload'].filename:
+            file = request.files['jd-upload']
+            if file.filename.lower().endswith('.pdf'):
+                job_description = extract_text_from_pdf(file)
             else:
-                job_description = jd_file.read().decode('utf-8', errors='ignore')
+                job_description = file.read().decode('utf-8', errors='ignore')
 
-        if not resume_text or not job_description:
+        if not resume_text.strip() or not job_description.strip():
             return jsonify({'error': 'Both resume and job description are required'}), 400
 
         resume_analysis = analyze_resume(resume_text)
         match_results = calculate_match_score(resume_text, job_description)
 
-        return jsonify({
+        response = {
             'score': match_results['score'],
             'missing_keywords': match_results['missing_keywords'],
             'matching_keywords': match_results['matching_keywords'],
             'resume_analysis': resume_analysis
-        })
+        }
+
+        return jsonify(response)
 
     except Exception as e:
-        return jsonify({'error': f"Server error: {str(e)}"}), 500
+        return jsonify({'error': f'Internal Server Error: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    app.run(debug=True)
