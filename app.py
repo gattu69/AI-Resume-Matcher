@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, jsonify
 from nlp_processor import analyze_resume, calculate_match_score
 import PyPDF2
 
+
+nlp = en_core_web_sm.load()
+
 app = Flask(__name__)
 
 def extract_text_from_pdf(file_storage):
