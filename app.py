@@ -7,6 +7,7 @@ from flask import Flask, render_template, request, jsonify
 from nlp_processor import analyze_resume, calculate_match_score
 import os
 
+
 nlp = en_core_web_sm.load()
 app = Flask(__name__)
 
