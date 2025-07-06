@@ -1,100 +1,57 @@
-import re
-from collections import Counter
+# ----------------------
+# nlp_processor.py
+# ----------------------
 import spacy
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import en_core_web_sm
+from collections import Counter
+import re
 
-nlp = en_core_web_sm.load()
+nlp = spacy.load("en_core_web_sm")
 
-def preprocess_text(text):
-    text = re.sub(r'[^\w\s]', '', text.lower())
-    return text
+action_verbs = [
+    "achieved", "developed", "improved", "led", "managed", "created", "designed", "implemented",
+    "increased", "reduced", "launched", "built", "analyzed", "negotiated", "organized"
+]
 
-def extract_keywords(text, max_keywords=20):
+def analyze_resume(text):
     doc = nlp(text)
-    keywords = []
-    
-    # Extract nouns and proper nouns
-    for token in doc:
-        if token.pos_ in ['NOUN', 'PROPN'] and not token.is_stop:
-            keywords.append(token.lemma_)
-    
-    # Extract named entities
-    for ent in doc.ents:
-        if ent.label_ in ['ORG', 'PRODUCT', 'TECH']:
-            keywords.append(ent.text.lower())
-    
-    # Count and get most common
-    keyword_counts = Counter(keywords)
-    return [kw for kw, count in keyword_counts.most_common(max_keywords)]
+    words = [token.text.lower() for token in doc if not token.is_stop and not token.is_punct]
+    word_count = len(words)
+    bullet_points = text.count("\u2022") + text.count("-")  # • and -
 
-def calculate_match_score(resume_text, job_description_text):
-    # Preprocess texts
-    resume_processed = preprocess_text(resume_text)
-    jd_processed = preprocess_text(job_description_text)
-    
-    # Extract keywords
-    resume_keywords = extract_keywords(resume_processed)
-    jd_keywords = extract_keywords(jd_processed)
-    
-    # Calculate matching keywords
-    matching_keywords = set(resume_keywords) & set(jd_keywords)
-    missing_keywords = set(jd_keywords) - set(resume_keywords)
-    
-    # TF-IDF similarity score
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform([resume_processed, jd_processed])
-    similarity_score = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-    
-    # Convert to percentage
-    match_score = round(similarity_score * 100, 1)
-    
-    return {
-        'score': match_score,
-        'missing_keywords': list(missing_keywords),
-        'matching_keywords': list(matching_keywords)
-    }
-
-def analyze_resume(resume_text):
-    doc = nlp(resume_text)
-    
-    # Extract sections
+    found_verbs = [word for word in words if word in action_verbs]
     sections = {
-        'experience': [],
-        'education': [],
-        'skills': [],
-        'summary': []
+        "Experience": re.findall(r"(?i)experience(.+?)(?=education|skills|projects|$)", text, re.DOTALL),
+        "Education": re.findall(r"(?i)education(.+?)(?=experience|skills|projects|$)", text, re.DOTALL),
+        "Skills": re.findall(r"(?i)skills(.+?)(?=experience|education|projects|$)", text, re.DOTALL),
+        "Projects": re.findall(r"(?i)projects(.+?)(?=experience|skills|education|$)", text, re.DOTALL)
     }
-    
-    # Simple pattern matching for sections (real implementation would be more sophisticated)
-    lines = resume_text.split('\n')
-    current_section = None
-    
-    for line in lines:
-        line_lower = line.strip().lower()
-        if 'experience' in line_lower or 'work history' in line_lower:
-            current_section = 'experience'
-        elif 'education' in line_lower:
-            current_section = 'education'
-        elif 'skills' in line_lower or 'technical skills' in line_lower:
-            current_section = 'skills'
-        elif 'summary' in line_lower or 'objective' in line_lower:
-            current_section = 'summary'
-        elif current_section and line.strip():
-            sections[current_section].append(line.strip())
-    
-    # Count metrics
-    word_count = len(resume_text.split())
-    bullet_points = len([line for line in lines if line.strip().startswith('-') or line.strip().startswith('•')])
-    action_verbs = len([token for token in doc if token.lemma_ in 
-                       ['manage', 'lead', 'develop', 'create', 'implement', 'improve']])
-    
+
     return {
-        'sections': {k: v for k, v in sections.items() if v},
-        'metrics': {
-            'word_count': word_count,
-            'bullet_points': bullet_points,
-            'action_verbs': action_verbs
-        }
+        "metrics": {
+            "word_count": word_count,
+            "bullet_points": bullet_points,
+            "action_verbs": len(set(found_verbs))
+        },
+        "sections": {k: v for k, v in sections.items() if v}
+    }
+
+def calculate_match_score(resume_text, jd_text):
+    resume_doc = nlp(resume_text)
+    jd_doc = nlp(jd_text)
+
+    resume_tokens = [token.lemma_.lower() for token in resume_doc if not token.is_stop and not token.is_punct]
+    jd_tokens = [token.lemma_.lower() for token in jd_doc if not token.is_stop and not token.is_punct]
+
+    resume_counter = Counter(resume_tokens)
+    jd_counter = Counter(jd_tokens)
+
+    matching_keywords = [word for word in jd_counter if word in resume_counter]
+    missing_keywords = [word for word in jd_counter if word not in resume_counter]
+
+    score = round((len(matching_keywords) / max(1, len(jd_counter))) * 100, 2)
+
+    return {
+        "score": score,
+        "matching_keywords": matching_keywords,
+        "missing_keywords": missing_keywords
     }
